@@ -12,7 +12,7 @@ async function main() {
     await mongoose.connect(config.mongoose_uri);
     await adminSeeder()
     server = app.listen(config.port, () => {
-      console.log(`APP NAME server app listening on port ${config.port}`);
+      console.log(`Digital Competency Platform server app listening on port ${config.port}`);
     });
   } 
   catch (err:any) {

@@ -18,7 +18,7 @@ app.use(
 );
 
 app.get('/', (req, res) => {
-  res.send('Welcome to APP NAME server..!');
+  res.send('Welcome to Digital Competency Platform server..!');
 });
 
 // Routes
