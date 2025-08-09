@@ -11,7 +11,7 @@ const emailSendBulkOrSingle = async (
     // Fetch all active and approved users who are not deleted
     const allEmails = await UserModel.find(
       {
-        isDeleted: false,
+        isDelited: false,
         requestState: 'approved',
         status: 'activeMember',
       },

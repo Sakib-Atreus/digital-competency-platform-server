@@ -1,27 +1,34 @@
-import { userRole } from '../constants';
+import { userRole } from '../constents';
 import { UserModel } from '../modules/user/user.model';
 import userServices from '../modules/user/user.service';
 
 const adminSeeder = async () => {
   const admin = {
     name: 'Admin',
-    email: 'admin@gmail.com',
     phone: '+8801234567890',
-    role: userRole.admin,
     password: '123456',
-    agreedToTerms: true,
+    confirmPassword:"123456",
+    email: 'admin@gmail.com',
+    role: userRole.admin,
+    aggriedToTerms:true,
+    OTPverified:true
   };
-
+  
   const adminExist = await UserModel.findOne({ role: userRole.admin });
 
+  // console.log(adminExist)
+
   if (!adminExist) {
-    console.log('seeding admin....');
-    const createAdmin = await userServices.createUser(admin);
-    if (!createAdmin) {
+    console.log('seeding admin....',admin);
+    const createAdmin =await userServices.createUser(admin);
+    if (!createAdmin) 
+    {
       throw Error('admin could not be created');
     }
 
-    console.log('Create admin : ', createAdmin);
+    console.log("✅ Create admin : ", createAdmin);
+  }else {
+    console.log(`✅ Admin already exists: ${admin.name}`);
   }
 };
 

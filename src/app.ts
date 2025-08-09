@@ -1,28 +1,27 @@
 import express from 'express';
 const app = express();
-import cors from 'cors';
-import globalErrorHandler from './middleware/globalErrorHandler';
-import routeNotFound from './middleware/routeNotFound';
-import Routes from './routes';
+import path from "path";
+import cors from "cors";
+import globalErrorHandler from "./middlewares/globalErrorhandeler";
+import routeNotFound from "./middlewares/routNotFound";
+import Routes from "./routes";
 
 // middleWares
 app.use(express.json());
-// app.use(cors());
-app.use(
-  cors({
-    origin: ['*', 'http://localhost:5173'],
-    methods: 'GET,POST,PUT,PATCH,DELETE',
-    allowedHeaders: 'Content-Type, Authorization',
-    credentials: true,
-  }),
-);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to Digital Competency Platform server..!');
+app.use(cors({
+  origin: ['*', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE','PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.get("/", (req, res) => {
+  res.send("Welcome to Digital Competency Platform server..!");
 });
 
 // Routes
-app.use('/api/v1', Routes);
+app.use("/api/v1", Routes);
 
 // route not found
 app.use(routeNotFound);

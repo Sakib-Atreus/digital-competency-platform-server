@@ -1,11 +1,11 @@
-import { TErrorSource } from '../constants';
+import { TErrorSource } from "../constents";
 
-const duplicateErrorHandler = (err: any) => {
+const dublicateErrorHandellerr = (err: any) => {
   const match = err.errorResponse.errmsg.match(/"([^"]*)"/);
-  const errorMessage = match ? match[1] : 'No match found';
+  const errorMessage = match ? match[1] : "No match found";
 
   const statuscode = 400;
-  const message = 'duplicate entry error';
+  const message = 'dublicet entry error';
   const errorSource: TErrorSource = [
     {
       path: '',
@@ -19,4 +19,4 @@ const duplicateErrorHandler = (err: any) => {
   };
 };
 
-export default duplicateErrorHandler;
+export default dublicateErrorHandellerr

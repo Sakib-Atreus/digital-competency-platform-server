@@ -1,9 +1,9 @@
 import { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import reformZodError from '../error/zoodError';
-import mongooseErrorHandler from '../error/mongooseErrorHandler';
-import duplicateErrorHandler from '../error/duplicateError';
-import { TErrorSource } from '../constants';
+import mongoseErrorHandeller from '../error/mongooseErrorHandeller';
+import dublicateErrorHandellerr from '../error/dublicateError';
+import { TErrorSource } from '../constents';
 
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   // setting default value
@@ -23,12 +23,12 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     message = 'validation error';
     errorSource = handaleZoderror;
   } else if (err?.name === 'ValidationError') {
-    const mongooseErrorHandlerr = mongooseErrorHandler(err);
-    statusCode = mongooseErrorHandlerr?.statusCode;
-    errorSource = mongooseErrorHandlerr?.errorSource;
-    message = mongooseErrorHandlerr.message;
+    const mongoseErrorHandellerr = mongoseErrorHandeller(err);
+    statusCode = mongoseErrorHandellerr?.statusCode;
+    errorSource = mongoseErrorHandellerr?.errorSource;
+    message = mongoseErrorHandellerr.message;
   } else if (err?.errorResponse?.code === 11000) {
-    const dublicateErrorHandeller = duplicateErrorHandler(err);
+    const dublicateErrorHandeller = dublicateErrorHandellerr(err);
     statusCode = dublicateErrorHandeller.statuscode;
     message = dublicateErrorHandeller.message;
     errorSource = dublicateErrorHandeller.errorSource;
@@ -47,7 +47,7 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     success: false,
     message: message,
     errorSource,
-    theError: err.stack,
+    theError:err.stack,
     // stack: config.nodeEnv === 'development' ? err.stack : null,
   });
 };

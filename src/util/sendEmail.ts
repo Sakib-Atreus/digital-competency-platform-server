@@ -1,23 +1,24 @@
 import nodemailer from 'nodemailer';
 import config from '../config';
 
+
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
-      secure: false,
+      secure: false, // true for port 465, false for other ports
       auth: {
-        user: `${config.company_gmail}`,
-        pass: `${config.gmail_app_password}`,
+        user: `${config.companyGmail}`,
+        pass: `${config.GmailAppPassword}`,
       },
     });
 
     const info = await transporter.sendMail({
-      from: `${config.company_gmail}`,
+      from: `${config.companyGmail}`,
       to,
       subject,
-      text: 'This E-mail is from Digital Competency Platform',
+      text: 'This E-mail is from Digital Competency Platform App',
       html,
     });
 

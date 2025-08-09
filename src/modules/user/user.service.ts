@@ -1,136 +1,258 @@
 import mongoose, { ClientSession, Types } from 'mongoose';
 import { TProfile, TUser } from './user.interface';
 import { ProfileModel, UserModel } from './user.model';
-import { uploadImgToCloudinary } from '../../util/uploadImgToCloudinary';
-
-// const createUser = async (payload: Partial<TUser>, method?: string) => {
-//   if (!payload.aggriedToterms) {
-//     throw new Error("Cannot proceed without agreeing to the terms and conditions");
-//   }
-
-//   const existingUser = await UserModel.findOne({ email: payload.email }).select('+password');
-
-//   // console.log("exist",existingUser)
-
-//   if (existingUser) {
-//     if (!existingUser.isDeleted) {
-//       return {
-//         message:"user already exist",
-//         data:"user creation failed"
-//       };
-//     }
-//   }
-
-//   const session: ClientSession = await mongoose.startSession();
-
-//   try {
-//     const newUser = await session.withTransaction(async () => {
-//       let user;
-
-//       if (method) {
-//         const { password, ...rest } = payload;
-//         const created = await UserModel.create([rest], { session });
-//         user = created[0];
-//       } else {
-//         user = new UserModel(payload);
-//         await user.save({ session });
-//       }
-
-//       await ProfileModel.create(
-//         [
-//           {
-//             name: payload.name ?? "",
-//             email: payload.email!,
-//             user_id: user._id,
-//           },
-//         ],
-//         { session }
-//       );
-
-//       return {
-//         message:"user created successfully",
-//         data:user
-//       };
-//     });
-
-//     return {
-//       message:"user already exist",
-//       data:newUser
-//     };
-//   }
-//   catch (error) {
-//     console.error("Error creating user:", error);
-//     throw error;
-//   } finally {
-//     session.endSession();
-//   }
-// };
+import { uploadImgToCloudinary } from '../../util/uploadImgToCludinary';
+import authUtil from '../auth/auth.utill';
+import { userRole } from '../../constents';
+import path from 'path';
+import { sendEmail } from '../../util/sendEmail';
+import { generateEmailTemplate } from '../../util/emailTemplate';
 
 const createUser = async (payload: Partial<TUser>, method?: string) => {
-  if (!payload.agreedToTerms) {
-    throw new Error('You must agree to the terms and conditions to register.');
+  // Validate password match
+  if (payload.password !== payload.confirmPassword) {
+    return {
+      success: false,
+      message: 'Password and confirm password do not match.',
+      data: { user: null, token: null },
+    };
   }
 
+  // Validate terms agreement
+  if (!payload.aggriedToTerms) {
+    return {
+      success: false,
+      message: 'You must agree to the terms and conditions to register.',
+      data: { user: null, token: null },
+    };
+  }
+
+  // Check for existing user
   const existingUser = await UserModel.findOne({ email: payload.email }).select(
     '+password',
   );
 
-  if (existingUser) {
-    if (!existingUser.isDeleted) {
-      return {
-        message: 'A user with this email already exists and is active.',
-        data: null,
-      };
-    }
+  if (existingUser && !existingUser.isDeleted) {
+    return {
+      success: false,
+      message: 'A user with this email already exists and is active.',
+      data: { user: null, token: null },
+    };
   }
 
-  const session: ClientSession = await mongoose.startSession();
+  // Create new payload with default role (avoid mutating input)
+  const userPayload = {
+    ...payload,
+    role: payload.role || userRole.user,
+  };
+
+  // Remove confirmPassword from payload
+  const { confirmPassword, ...userData } = userPayload;
+
+  const session = await mongoose.startSession();
 
   try {
-    const result = await session.withTransaction(async () => {
-      let user;
+    // Manually start the transaction
+    await session.startTransaction();
 
-      if (method) {
-        const { password, ...rest } = payload;
-        const created = await UserModel.create([rest], { session });
-        user = created[0];
-      } else {
-        user = new UserModel(payload);
-        await user.save({ session });
-      }
+    let user;
 
-      await ProfileModel.create(
-        [
-          {
-            name: payload.name ?? 'user',
-            email: payload.email!,
-            user_id: user._id,
-          },
-        ],
-        { session },
-      );
+    // Create user
+    if (method) {
+      const created = await UserModel.create([userData], { session });
+      user = created[0];
+    } else {
+      user = new UserModel({ ...userData });
+      await user.save({ session });
+    }
 
+    // Create profile
+    const profileCration = await ProfileModel.create(
+      [
+        {
+          name: userData.name ?? 'user',
+          phone: userData.phone,
+          email: userData.email!,
+          user_id: user._id,
+          // img: defaultImageUpload.secure_url,
+        },
+      ],
+      { session },
+    );
+
+    // Commit the transaction
+    await session.commitTransaction();
+
+    // Fetch the user after transaction (excluding sensitive fields)
+    const fetchedUser = await UserModel.findOne({
+      email: userData.email,
+    }).select('-password');
+    if (!fetchedUser) {
       return {
-        message: 'User created successfully.',
-        data: user,
+        success: false,
+        message: 'User created but not found after transaction.',
+        data: { user: null, token: null },
       };
-    });
+    }
 
-    return result;
-  } catch (error) {
+    // --- Send Welcome Email here ---
+
+    const notificationMessage = `
+    Hi ${fetchedUser.name || 'User'},<br /><br />
+    Thank you for registering with us! We're excited to have you on board.<br /><br />
+    Feel free to explore the platform and improve your interview skills.<br /><br />
+    Best wishes,<br />
+    The Digital Competency Platform Team
+  `;
+
+    await sendEmail(
+      fetchedUser.email,
+      'Welcome to Digital Competency Platform Platform!',
+      generateEmailTemplate({
+        title: '🎉 Welcome to Digital Competency Platform Platform!',
+        message: notificationMessage,
+        ctaText: 'Get Started',
+        ctaLink:
+          'https://cerulean-pavlova-50e690.netlify.app/userDashboard/mockInterview',
+      }),
+    );
+
+    // Send OTP after transaction is complete
+    const token = await authUtil.sendOTPviaEmail(fetchedUser);
+
+    return {
+      success: true,
+      message: 'User created successfully and OTP sent.',
+      user: fetchedUser.toObject(),
+      token: token.token || null,
+    };
+  } catch (error: any) {
+    // Rollback the transaction on error
+    await session.abortTransaction();
     console.error('Error creating user:', error);
     return {
-      message: 'User creation failed due to an internal error.',
-      data: null,
+      success: false,
+      message:
+        error.message || 'User creation failed due to an internal error.',
+      data: { user: null, token: null },
     };
   } finally {
     session.endSession();
   }
 };
 
-const getAllUsers = async () => {
-  const result = await UserModel.find();
+const setFCMToken = async (user_id: Types.ObjectId, fcmToken: string) => {
+  if (!fcmToken) {
+    throw new Error('fcm token is required');
+  }
+
+  const result = await UserModel.findOneAndUpdate(
+    {
+      _id: user_id,
+    },
+    {
+      fcmToken: fcmToken,
+    },
+    { new: true },
+  );
+
   return result;
+};
+
+const getAllUsers = async () => {
+  const result = await UserModel.find({ isBlocked: false, isDeleted: false });
+  return result;
+};
+
+const getAllAvailableUsers = async () => {
+  const result = await UserModel.find({ isDeleted: false });
+  return result;
+};
+
+const getAllProfiles = async () => {
+  // Assuming you have a Profile model, fetch all profiles
+  const profiles = await ProfileModel.find({});
+  return profiles;
+};
+
+// update profile with profile image
+const updateUserProfile = async (
+  user_id: Types.ObjectId,
+  payload: Partial<TProfile> = {},
+  imgFile?: Express.Multer.File,
+) => {
+  const updatedProfileData = { ...payload };
+
+  console.log('Image file received:', imgFile); // Debug log
+
+  // If imgFile is provided, upload it to Cloudinary
+  if (imgFile) {
+    try {
+      const imageUploadResult = await uploadImgToCloudinary(
+        `profile-${user_id.toString()}`, // Custom name for the image
+        imgFile.path, // Path to the uploaded image
+      );
+
+      // Add the image URL to the updated profile data
+      updatedProfileData.img = imageUploadResult.secure_url;
+    } catch (error: any) {
+      throw new Error('Error uploading image: ' + error.message);
+    }
+  }
+
+  // Check if there’s anything to update
+  if (Object.keys(updatedProfileData).length === 0) {
+    throw new Error('No data or image provided to update profile');
+  }
+
+  // Start a transaction to ensure atomic updates
+  const session = await ProfileModel.startSession();
+  session.startTransaction();
+
+  try {
+    // Update the Profile collection
+    const updatedProfile = await ProfileModel.findOneAndUpdate(
+      { user_id },
+      { $set: updatedProfileData },
+      { new: true, runValidators: true, session }, // Return updated doc, run validators, use session
+    );
+
+    if (!updatedProfile) {
+      throw new Error('Profile not found for this user');
+    }
+
+    // If name or phone is provided in payload, update the User collection
+    const userUpdateData: Partial<TUser> = {};
+    if (updatedProfileData.name) {
+      userUpdateData.name = updatedProfileData.name;
+    }
+    if (updatedProfileData.phone) {
+      userUpdateData.phone = updatedProfileData.phone;
+    }
+
+    if (Object.keys(userUpdateData).length > 0) {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        user_id,
+        { $set: userUpdateData },
+        { new: true, runValidators: true, session }, // Return updated doc, run validators, use session
+      );
+
+      if (!updatedUser) {
+        throw new Error('User not found');
+      }
+    }
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return updatedProfile;
+  } catch (error: any) {
+    // Abort the transaction on error
+    await session.abortTransaction();
+    session.endSession();
+    throw new Error('Profile update failed: ' + error.message);
+  }
 };
 
 const updateProfileData = async (
@@ -152,29 +274,59 @@ const updateProfileData = async (
 const deleteSingleUser = async (user_id: Types.ObjectId) => {
   const session: ClientSession = await mongoose.startSession();
   session.startTransaction();
+
   try {
-    await UserModel.findOneAndUpdate(
+    // Validate user_id
+    if (!Types.ObjectId.isValid(user_id)) {
+      throw new Error('Invalid user ID provided');
+    }
+
+    // Update the UserModel
+    const updatedUser = await UserModel.findOneAndUpdate(
       { _id: user_id },
       { isDeleted: true, email: null },
-      { session },
-    );
-    await ProfileModel.findOneAndUpdate(
-      { user_id },
-      { isDeleted: true, email: null },
-      { session },
+      { new: true, session }, // Return the updated document
     );
 
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    // Update the ProfileModel
+    const updatedProfile = await ProfileModel.findOneAndUpdate(
+      { user_id },
+      { isDeleted: true, email: null },
+      { new: true, session }, // Return the updated document
+    );
+
+    if (!updatedProfile) {
+      throw new Error('Profile not found for the user');
+    }
+
+    // Commit the transaction
     await session.commitTransaction();
-    session.endSession();
-  } catch (error) {
+
+    return {
+      success: true,
+      message: 'User and associated profile deleted successfully',
+      data: {
+        userId: user_id,
+        updatedUser,
+        updatedProfile,
+      },
+    };
+  } catch (error: any) {
+    // Abort the transaction on error
     await session.abortTransaction();
+    throw new Error(`Failed to delete user: ${error.message}`);
+  } finally {
+    // Always end the session
     session.endSession();
-    throw error;
   }
 };
 
-const selfDestruct = async (user_id: Types.ObjectId) => {
-  const result = deleteSingleUser(user_id);
+const selfDistuct = async (user_id: Types.ObjectId) => {
+  const result = await deleteSingleUser(user_id);
   return result;
 };
 
@@ -210,9 +362,61 @@ const uploadOrChangeImg = async (
 };
 
 const getProfile = async (user_id: Types.ObjectId) => {
-  const profile = await ProfileModel.findOne({ user_id });
+  const profile = await ProfileModel.findOne({ user_id }).populate([
+    { path: 'user_id', model: 'UserCollection' },
+    { path: 'notificationList_id', model: 'NotificationList' },
+    { path: 'appliedJobs', model: 'Job' },
+    { path: 'progress.interviewId', model: 'MockInterview' },
+    {
+      path: 'progress.questionBank_AndProgressTrack.questionBaank_id',
+      model: 'QuestionBank',
+    },
+    {
+      path: 'progress.questionBank_AndProgressTrack.lastQuestionAnswered_id',
+      model: 'QuestionList',
+    },
+  ]);
+
+  if (!profile) {
+    throw new Error('Profile not found for the given user_id');
+  }
 
   return profile;
+};
+
+// In userServices.ts
+const updateUserByAdmin = async (
+  userId: Types.ObjectId,
+  payload: Partial<TUser>,
+) => {
+  console.log('Received userId:', userId.toString());
+  console.log('Received payload:', payload);
+
+  if (payload.isBlocked === true) {
+    payload.isLoggedIn = false;
+  }
+
+  const updatedUser = await UserModel.findByIdAndUpdate(userId, payload, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedUser) {
+    throw new Error('User not found or update failed');
+  }
+
+  console.log('Updated user:', updatedUser);
+  return updatedUser;
+};
+
+const getUserFullDetails = async (userId: Types.ObjectId) => {
+  const user = await UserModel.findById(userId).select('-password');
+  const profile = await ProfileModel.findOne({ user_id: userId });
+
+  return {
+    user,
+    profile,
+  };
 };
 
 const userServices = {
@@ -220,9 +424,15 @@ const userServices = {
   getAllUsers,
   updateProfileData,
   deleteSingleUser,
-  selfDestruct,
+  selfDistuct,
   uploadOrChangeImg,
   getProfile,
+  updateUserProfile,
+  getAllProfiles,
+  updateUserByAdmin,
+  getUserFullDetails,
+  setFCMToken,
+  getAllAvailableUsers,
 };
 
 export default userServices;

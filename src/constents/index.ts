@@ -1,8 +1,7 @@
-export type TUserRole = 'admin' | 'supervisor' | 'student';
+export type TUserRole = 'admin' | 'user';
 
 export const userRole = {
-  student: 'student',
-  supervisor: 'supervisor',
+  user: 'user',
   admin: 'admin',
 } as const;
 
