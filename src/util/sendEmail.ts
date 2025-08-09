@@ -17,7 +17,7 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
       from: `${config.company_gmail}`,
       to,
       subject,
-      text: 'This E-mail is from APP NAME',
+      text: 'This E-mail is from Digital Competency Platform',
       html,
     });
 

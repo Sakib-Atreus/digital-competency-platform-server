@@ -1,21 +1,22 @@
-import mongoose from "mongoose";
-import app from "./app";
-import { Server } from "http";
-import adminSeeder from "./seeder/adminSeeder";
-import config from "./config";
+import mongoose from 'mongoose';
+import app from './app';
+import { Server } from 'http';
+import adminSeeder from './seeder/adminSeeder';
+import config from './config';
 
 let server: Server;
 
 async function main() {
   try {
-    console.log("connecting to mongodb....⏳");
+    console.log('connecting to mongodb....⏳');
     await mongoose.connect(config.mongoose_uri);
-    await adminSeeder()
+    await adminSeeder();
     server = app.listen(config.port, () => {
-      console.log(`Digital Competency Platform server app listening on port ${config.port}`);
+      console.log(
+        `Digital Competency Platform server app listening on port ${config.port}`,
+      );
     });
-  } 
-  catch (err:any) {
+  } catch (err: any) {
     throw Error('something went wrong in server or mongoose connection');
   }
 }
