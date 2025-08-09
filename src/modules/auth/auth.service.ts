@@ -1,8 +1,8 @@
 import bcrypt from 'bcrypt';
 import config from '../../config';
-import authUtill from './auth.utill';
+import authUtil from './auth.util';
 import { UserModel } from '../user/user.model';
-import idConverter from '../../util/idConvirter';
+import idConverter from '../../util/idConverter';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { sendEmail } from '../../util/sendEmail';
 import userServices from '../user/user.service';
@@ -16,15 +16,17 @@ const logIn = async (
 
   // console.log("user is",user)
 
- 
-  if ((user?.isBlocked || user?.isDeleted || !user) && (method === 'google' || method === 'facebook')) {
+  if (
+    (user?.isBlocked || user?.isDeleted || !user) &&
+    (method === 'google' || method === 'facebook')
+  ) {
     // Optional: archive/rename old user, or just ignore
 
     // Register a fresh user
     await userServices.createUser(
       {
         email,
-        aggriedToTerms: true,
+        agreedToTerms: true,
       },
       method,
     );
@@ -55,13 +57,11 @@ const logIn = async (
     }
   }
 
-
   const updatedUser = await UserModel.findOneAndUpdate(
     { email },
     { isLoggedIn: true },
     { new: true },
   );
-
 
   const tokenizeData = {
     id: user._id.toHexString(),
@@ -69,13 +69,13 @@ const logIn = async (
     username: updatedUser?.name,
   };
 
-  const approvalToken = authUtill.createToken(
+  const approvalToken = authUtil.createToken(
     tokenizeData,
     config.jwt_token_secret,
     config.token_expairsIn,
   );
 
-  const refreshToken = authUtill.createToken(
+  const refreshToken = authUtil.createToken(
     tokenizeData,
     config.jwt_refresh_Token_secret,
     config.rifresh_expairsIn,
@@ -83,7 +83,6 @@ const logIn = async (
 
   return { approvalToken, refreshToken, updatedUser };
 };
-
 
 const logOut = async (userId: string) => {
   const convertedId = idConverter(userId);
@@ -203,7 +202,7 @@ const refreshToken = async (refreshToken: string) => {
     id: findUser.id,
     role: role,
   };
-  const approvalToken = authUtill.createToken(
+  const approvalToken = authUtil.createToken(
     JwtPayload,
     config.jwt_token_secret as string,
     config.token_expairsIn as string,
@@ -230,10 +229,10 @@ const forgetPassword = async (email: string) => {
     role: user.role,
   };
 
-  const resetToken = authUtill.createToken(
+  const resetToken = authUtil.createToken(
     tokenizeData,
     config.jwt_token_secret as string,
-    config.token_expairsIn as string
+    config.token_expairsIn as string,
   );
 
   const resetLink = `${config.FrontEndHostedPort}?id=${user._id}&token=${resetToken}`;
@@ -252,7 +251,11 @@ const forgetPassword = async (email: string) => {
     </div>
   `;
 
-  const emailResponse = await sendEmail(user.email, 'Reset Your Password', passwordResetHtml);
+  const emailResponse = await sendEmail(
+    user.email,
+    'Reset Your Password',
+    passwordResetHtml,
+  );
 
   if (emailResponse.success) {
     return {

@@ -1,6 +1,6 @@
 import express from 'express';
 import userController from './user.controller';
-import { userRole } from '../../constents';
+import { userRole } from '../../constants';
 import auth from '../../middleware/auth';
 import { upload } from '../../util/uploadImgToCloudinary';
 
@@ -11,31 +11,31 @@ userRoutes.post('/createUser', userController.createUser);
 
 userRoutes.patch(
   '/updateProfileData',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.supervisor, userRole.student),
   userController.updateProfileData,
 );
 userRoutes.delete(
-  '/selfDistuct',
-  auth(userRole.user),
-  userController.selfDistuct,
+  '/selfDestruct',
+  auth(userRole.student),
+  userController.selfDestruct,
 );
 userRoutes.post(
   '/uploadOrChangeImg',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.supervisor, userRole.student),
   upload.single('files'),
   userController.uploadOrChangeImg,
 );
 
 userRoutes.get(
   '/getProfile',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.supervisor, userRole.student),
   userController.getProfile,
 );
 
 // admin routes
 userRoutes.get(
   '/getAlluser',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.supervisor, userRole.student),
   userController.getAllUsers,
 );
 userRoutes.delete(

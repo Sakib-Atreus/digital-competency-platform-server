@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { JwtPayload } from 'jsonwebtoken';
-import authUtill from '../modules/auth/auth.utill';
+import authUtil from '../modules/auth/auth.util';
 import catchAsync from '../util/catchAsync';
-import { TUserRole } from '../constents';
+import { TUserRole } from '../constants';
 import { UserModel } from '../modules/user/user.model';
-import idConverter from '../util/idConvirter';
+import idConverter from '../util/idConverter';
 
 const auth = (...requeredUserRole: TUserRole[]) => {
     return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -16,7 +16,7 @@ const auth = (...requeredUserRole: TUserRole[]) => {
             throw new Error('Unauthorized User: Missing Authorization Token');
         }
 
-        const decoded = authUtill.decodeAuthorizationToken(authorizationToken);
+        const decoded = authUtil.decodeAuthorizationToken(authorizationToken);
 
         if (!decoded) {
             throw new Error('Unauthorized User: Token decoding failed');
