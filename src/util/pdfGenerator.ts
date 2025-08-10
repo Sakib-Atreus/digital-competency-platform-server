@@ -16,7 +16,18 @@ export const generatePDF = async (data: { userName: string, examTitle: string, l
   page.drawText(`Date: ${data.date}`, { x: 50, y: height - 190, size: fontSize - 4, font });
 
   const pdfBytes = await pdfDoc.save();
-  const filePath = path.join(__dirname, `../../../certificates/${data.userName}_${data.examTitle}_${data.level}.pdf`);
+  
+  // const filePath = path.join(__dirname, `../../../certificates/${data.userName}_${data.examTitle}_${data.level}.pdf`);
+
+  // Always save to uploads folder in project root
+  const uploadsDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+
+  const safeFileName = `${data.userName}_${data.examTitle}_${data.level}.pdf`.replace(/[^a-z0-9_\-\.]/gi, "_");
+  const filePath = path.join(uploadsDir, safeFileName);
+
   fs.writeFileSync(filePath, pdfBytes);
 
   return filePath;

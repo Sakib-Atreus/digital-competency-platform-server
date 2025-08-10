@@ -5,6 +5,9 @@ import { userRole } from '../../constents';
 
 const certificateRoutes = express.Router();
 
-certificateRoutes.get('/', auth([userRole.admin, userRole.user]), certificateController.getCertificates);
+certificateRoutes.get('/', auth([userRole.admin, userRole.student]), certificateController.getCertificates);
+
+certificateRoutes.get('/download/:id', auth([userRole.admin, userRole.student]), certificateController.downloadCertificate);
+
 
 export default certificateRoutes;

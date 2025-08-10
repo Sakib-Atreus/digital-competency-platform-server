@@ -6,7 +6,7 @@ import { userRole } from '../../constents';
 
 const questionRoutes = express.Router();
 
-questionRoutes.post('/', auth([userRole.admin, userRole.user]), questionController.createQuestion);
-questionRoutes.get('/:examId', auth([userRole.admin, userRole.user]), questionController.getQuestions);
+questionRoutes.post('/create-question', auth([userRole.admin, userRole.student]), questionController.createQuestion);
+questionRoutes.get('/get-allQuestion/:examId', auth([userRole.admin, userRole.student]), questionController.getQuestions);
 
 export default questionRoutes;

@@ -11,9 +11,13 @@ const UserSchema = new Schema<TUser>(
     email: { type: String, required: false, unique: false },
     password: { type: String, required: false },
     confirmPassword: { type: String, required: false },
-    role: { type: String, enum: ['admin', 'user'], default: userRole.user },
-    aggriedToTerms: { type: Boolean, required:false, default: false },
-    allowPasswordChange:{ type: Boolean, default: false },
+    role: {
+      type: String,
+      enum: ['admin', 'supervisor', 'student'],
+      default: userRole.student,
+    },
+    aggriedToTerms: { type: Boolean, required: false, default: false },
+    allowPasswordChange: { type: Boolean, default: false },
     sentOTP: { type: String, required: false, unique: false, default: null },
     OTPverified: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
@@ -21,27 +25,51 @@ const UserSchema = new Schema<TUser>(
     isLoggedIn: { type: Boolean, default: false },
     loggedOutTime: { type: Date },
     passwordChangeTime: { type: Date },
-    fcmToken:{type:String,required:false, default:null}
   },
   { timestamps: true },
 );
+const ExamResultSchema = new Schema({
+  step: { type: Number, enum: [1, 2, 3], required: true },
+  score: { type: Number, default: null },
+  certifiedLevel: {
+    type: String,
+    enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Fail', null],
+    default: null,
+  },
+  completedAt: { type: Date, default: Date.now },
+});
 
-const ProfileSchema = new Schema(
+const ExamProgressSchema = new Schema({
+  currentStep: { type: Number, enum: [1, 2, 3], default: 1 },
+  finalLevel: {
+    type: String,
+    enum: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Fail', null],
+    default: null,
+  },
+  hasCompleted: { type: Boolean, default: false },
+  results: { type: [ExamResultSchema], default: [] },
+  retakesUsed: { type: Number, default: 0 },
+});
+
+const ProfileSchema = new Schema<TProfile>(
   {
     name: { type: String, required: true },
-    phone: { type: String, required: false },
-    email: { type: String, required: false, unique: false },
-    img: { type: String, default: "https://res.cloudinary.com/dpgcpei5u/image/upload/v1747546759/interviewProfile_jvo9jl.jpg" },
+    phone: { type: String },
+    email: { type: String },
+    img: {
+      type: String,
+      default:
+        'https://res.cloudinary.com/dpgcpei5u/image/upload/v1747546759/interviewProfile_jvo9jl.jpg',
+    },
     user_id: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: 'UserCollection',
     },
     isDeleted: { type: Boolean, default: false },
+    examProgress: { type: ExamProgressSchema, default: () => ({}) },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
 UserSchema.pre('save', async function (next) {
@@ -57,4 +85,4 @@ UserSchema.pre('save', async function (next) {
 });
 
 export const UserModel = mongoose.model('UserCollection', UserSchema);
-export const ProfileModel =  mongoose.model('Profile', ProfileSchema);
+export const ProfileModel = mongoose.model('Profile', ProfileSchema);

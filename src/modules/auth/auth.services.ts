@@ -96,13 +96,8 @@ const logIn = async (
       'frofile is not found for resumy and about me video upload check',
     );
   }
-  const meta = {
-    isResumeUploaded: findProfile.isResumeUploaded,
-    isAboutMeGenerated: findProfile.isAboutMeGenerated,
-    isAboutMeVideoChecked: findProfile.isAboutMeVideoChecked,
-  };
 
-  return { approvalToken, refreshToken, updatedUser, message, meta };
+  return { approvalToken, refreshToken, updatedUser, message };
 };
 
 const logOut = async (userId: string) => {
