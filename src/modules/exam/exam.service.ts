@@ -8,6 +8,11 @@ export const createExam = async (examData: any) => {
   return await ExamModel.create(examData);
 };
 
+export const getAllExams = async () => {
+  return await ExamModel.find({});
+};
+
+
 export const getExamsByStep = async (step: number) => {
   const stepLevelsMap: { [key: number]: string[] } = {
     1: ['A1', 'A2'],

@@ -12,10 +12,12 @@ examRoutes.post(
   examController.createExam,
 );
 examRoutes.get(
-    '/',
-    auth([userRole.admin, userRole.student]),
-    examController.getExams,
-  );
+  '/',
+  auth([userRole.admin, userRole.student]),
+  examController.getExams,
+);
+examRoutes.get('/all', examController.getAllExams);
+
 examRoutes.get(
   '/all-exams',
   auth([userRole.admin, userRole.student]),

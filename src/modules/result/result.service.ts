@@ -166,6 +166,7 @@ export const submitExam = async (
 ): Promise<SubmitExamResponse> => {
   const session = await mongoose.startSession();
   session.startTransaction();
+  let committed = false;
   try {
     const exam = await ExamModel.findById(examId).session(session);
     if (!exam) throw new Error("Exam not found");
@@ -266,6 +267,7 @@ export const submitExam = async (
     await profile.save({ session });
 
     await session.commitTransaction();
+    committed = true;
 
     // Generate certificate AFTER transaction
     let certificateUrl: string | null = null;
@@ -281,7 +283,9 @@ export const submitExam = async (
       certificateUrl: certificateUrl as any,
     };
   } catch (error) {
+    if (!committed) {
     await session.abortTransaction();
+  }
     throw error;
   } finally {
     session.endSession();

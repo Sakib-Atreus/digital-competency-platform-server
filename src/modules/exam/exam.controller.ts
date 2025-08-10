@@ -14,6 +14,11 @@ export const getExams = catchAsync(async (req: Request, res: Response) => {
   res.status(200).json({ success: true, data: exams });
 });
 
+export const getAllExams = catchAsync(async (req: Request, res: Response) => {
+  const exams = await examService.getAllExams();
+  res.status(200).json({ success: true, data: exams });
+});
+
 export const getExamById = catchAsync(async (req: Request, res: Response) => {
   const exam = await examService.getExamById(req.params.examId);
   if (!exam) {
