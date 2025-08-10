@@ -43,7 +43,7 @@ const createUser = async (payload: Partial<TUser>, method?: string) => {
   // Create new payload with default role (avoid mutating input)
   const userPayload = {
     ...payload,
-    role: payload.role || userRole.user,
+    role: payload.role || userRole.student,
   };
 
   // Remove confirmPassword from payload
@@ -67,18 +67,26 @@ const createUser = async (payload: Partial<TUser>, method?: string) => {
     }
 
     // Create profile
-    const profileCration = await ProfileModel.create(
-      [
-        {
-          name: userData.name ?? 'user',
-          phone: userData.phone,
-          email: userData.email!,
-          user_id: user._id,
-          // img: defaultImageUpload.secure_url,
-        },
-      ],
-      { session },
-    );
+const profileCreation = await ProfileModel.create(
+  [
+    {
+      name: userData.name ?? 'user',
+      phone: userData.phone,
+      email: userData.email!,
+      user_id: user._id,
+      ...(userData.role === 'student' && { // only if student
+        examProgress: {
+          currentStep: 1,
+          finalLevel: null,
+          hasCompleted: false,
+          results: [],
+          retakesUsed: 0
+        }
+      })
+    },
+  ],
+  { session },
+);
 
     // Commit the transaction
     await session.commitTransaction();
@@ -139,24 +147,6 @@ const createUser = async (payload: Partial<TUser>, method?: string) => {
   } finally {
     session.endSession();
   }
-};
-
-const setFCMToken = async (user_id: Types.ObjectId, fcmToken: string) => {
-  if (!fcmToken) {
-    throw new Error('fcm token is required');
-  }
-
-  const result = await UserModel.findOneAndUpdate(
-    {
-      _id: user_id,
-    },
-    {
-      fcmToken: fcmToken,
-    },
-    { new: true },
-  );
-
-  return result;
 };
 
 const getAllUsers = async () => {
@@ -431,7 +421,6 @@ const userServices = {
   getAllProfiles,
   updateUserByAdmin,
   getUserFullDetails,
-  setFCMToken,
   getAllAvailableUsers,
 };
 

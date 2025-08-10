@@ -7,32 +7,27 @@ const userRoutes = express.Router();
 
 // users roiuts
 userRoutes.post('/createUser', userController.createUser);
-userRoutes.post(
-  '/setFCMToken',
-  auth([userRole.admin, userRole.user]),
-  userController.setFCMToken,
-);
 
 userRoutes.patch(
   '/updateProfileData',
-  auth([userRole.admin, userRole.user]),
+  auth([userRole.admin, userRole.student]),
   userController.updateProfileData,
 );
 userRoutes.delete(
   '/selfDistuct',
-  auth([userRole.user]),
+  auth([userRole.student]),
   userController.selfDistuct,
 );
 
 userRoutes.post(
   '/uploadOrChangeImg',
-  auth([userRole.admin, userRole.user]),
+  auth([userRole.admin, userRole.student]),
   upload.single('files'),
   userController.uploadOrChangeImg,
 );
 userRoutes.get(
   '/getProfile',
-  auth([userRole.admin, userRole.user]),
+  auth([userRole.admin, userRole.student]),
   userController.getProfile,
 );
 
@@ -46,18 +41,18 @@ userRoutes.get(
 userRoutes.get('/all-profiles', userController.getAllProfiles);
 userRoutes.put(
   '/update-user/:id',
-  auth([userRole.admin, userRole.user]),
+  auth([userRole.admin, userRole.student]),
   userController.updateUserByAdmin,
 );
 // admin routes
 userRoutes.get(
   '/getAlluser',
-  auth([userRole.admin, userRole.user]),
+  auth([userRole.admin, userRole.student]),
   userController.getAllUsers,
 );
 userRoutes.get(
   '/getAllUsersWithoutDeleted',
-  auth([userRole.admin, userRole.user]),
+  auth([userRole.admin, userRole.student]),
   userController.getAllAvailableUsers,
 );
 
@@ -70,7 +65,7 @@ userRoutes.delete(
 // Update Profile Route (with image upload)
 userRoutes.patch(
   '/updateProfile',
-  auth([userRole.admin, userRole.user]), // Only authenticated users can update their profile
+  auth([userRole.admin, userRole.student]), // Only authenticated users can update their profile
   upload.single('img'), // Handle single image upload
   userController.updateUserProfile, // Call the controller method
 );
