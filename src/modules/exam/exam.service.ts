@@ -26,6 +26,10 @@ export const getExamById = async (examId: string) => {
   return await ExamModel.findById(examId);
 };
 
+export const getExamsByLevel = async (levels: string[]) => {
+  return await ExamModel.find({ level: { $in: levels }, isActive: true });
+};
+
 /**
  * Evaluate user's score and return certification and next step info
  */

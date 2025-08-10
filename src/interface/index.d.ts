@@ -5,7 +5,6 @@ declare global{
         interface Request{
             user:JwtPayload,
             files: {
-                resumeFile: Express.Multer.File[];
                 certificateFile: Express.Multer.File[];
               };
         }
