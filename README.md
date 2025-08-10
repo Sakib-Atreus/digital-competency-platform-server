@@ -72,13 +72,19 @@ APISECRET=your_cloudinary_api_secret_key
 COMPANY_GMAIL=your_two_factor_authentic_mail
 GMAIL_APP_PASSWORD=your_mail
 
+```
+
+
 ```bash
 # Start the server
 npm run start:dev
+```
 
 ```bash
 # Testing the all api
 http://localhost:5000/api/v1
+
+```
 
 ```bash
 # API Documentation 
