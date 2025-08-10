@@ -271,7 +271,7 @@ export const submitExam = async (
     let certificateUrl: string | null = null;
     if (passed) {
       const certificateDoc = await generateCertificate(userId, examId, certificationLevel);
-      certificateUrl = certificateDoc.certificateUrl; // Store for response
+      certificateUrl = certificateDoc.certificateUrl;
     }
 
     return {
