@@ -8,12 +8,12 @@ import { userRole } from "../../constents";
 const authRouter = express.Router();
 
 authRouter.post("/logIn", validator(logInValidator), authController.logIn)
-authRouter.post("/logOut", auth([userRole.admin, userRole.user]), authController.logOut)
-authRouter.post("/changePassword", auth([userRole.admin,userRole.user]), authController.changePassword)
+authRouter.post("/logOut", auth([userRole.admin, userRole.student]), authController.logOut)
+authRouter.post("/changePassword", auth([userRole.admin,userRole.student]), authController.changePassword)
 authRouter.post("/otpcrossCheck",authController.otpcrossCheck )
 
 
-authRouter.post("/send_OTP", auth([userRole.admin, userRole.user],{requestOTP:true}), authController.send_OTP)
+authRouter.post("/send_OTP", auth([userRole.admin, userRole.student],{requestOTP:true}), authController.send_OTP)
 authRouter.post("/reSend_OTP", authController.reSend_OTP)
 
 authRouter.post("/refresh-token", authController.refreshToken)
